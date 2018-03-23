@@ -1,0 +1,31 @@
+This code was developed under Julia v0.4 by Miles Lubin in 2016 and later
+modified by Yury Dvorkin. In preparation for this release (March 2018), we were
+able to run it under only Julia 0.5.2. On Julia 0.5 it prints some deprecation
+warnings that can be safely ignored. Note that the official releases of Julia
+0.5 and earlier no longer run on Linux
+(https://discourse.julialang.org/t/git-ssl-errors-while-installing-packages).
+
+The following packages must be installed:
+
+  - Distributions
+  - Ipopt
+  - JuMP
+  - JuMPChance
+  - MAT
+  - MatpowerCases
+
+To run the code, execute main.jl, or include() it from a Julia prompt.
+
+The input data is given as follows:
+
+  - Configuration file case.dat
+  - File acopf_input.jl uses MatpowerCases to load the system data based on the
+    configuration in case.data
+  - We also specify additional input data in lines 38-59 of main.jl
+
+The results of the solve are returned by createandsolvemodel().
+
+The CCACOPF model is formulated in model_nl.jl (JuMP model `m_chance`). Prior to
+formulating the CCACOPF model we solve a deterministic ACOPF model (JuMP model
+`m`). The formulation for the deterministic ACOPF model is based on code
+provided by Harsha Nagarajan (LANL).
