@@ -1,0 +1,10 @@
+case case118
+
+refbus 1
+logfile case24.log
+loadscale 1.10
+mvaBase 100
+thermalLimitscale 0.6
+theta_u 15
+
+END
