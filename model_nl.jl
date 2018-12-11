@@ -16,7 +16,7 @@ function createandsolvemodel(thermalLimitscale, generators, buses, lines, farms,
 
     total_var = sum([f.σ^2 for f in farms])
     total_deviation = quantile(Normal(0,sqrt(total_var)),1-ϵ)
-    @show total_deviation
+    # @show total_deviation
 
     # Continuous Variables
     @variable(m, pij[1:numlines])
@@ -47,17 +47,17 @@ function createandsolvemodel(thermalLimitscale, generators, buses, lines, farms,
         @constraint(m, θij[i] == (θ[lines[i].head] - θ[lines[i].tail]))
 
         # flow leaving i towards j
-        @NLconstraint(m, con, pij[i] == (1/lines[i].ratio)^2 * lines[i].γ * v[lines[i].head]^2 - (1/lines[i].ratio)*lines[i].γ * v[lines[i].head]*v[lines[i].tail] *cos(θ[lines[i].head] - θ[lines[i].tail]) - (1/lines[i].ratio)*lines[i].β * v[lines[i].head]*v[lines[i].tail] *sin(θ[lines[i].head] - θ[lines[i].tail]))
+        con = @NLconstraint(m, pij[i] == (1/lines[i].ratio)^2 * lines[i].γ * v[lines[i].head]^2 - (1/lines[i].ratio)*lines[i].γ * v[lines[i].head]*v[lines[i].tail] *cos(θ[lines[i].head] - θ[lines[i].tail]) - (1/lines[i].ratio)*lines[i].β * v[lines[i].head]*v[lines[i].tail] *sin(θ[lines[i].head] - θ[lines[i].tail]))
         push!(pij_constr, con)
 
-        @NLconstraint(m, con, qij[i] == -(1/lines[i].ratio)^2*(lines[i].β + lines[i].b_charge/2)* v[lines[i].head]^2 + (1/lines[i].ratio)*lines[i].β * v[lines[i].head]*v[lines[i].tail] *cos(θ[lines[i].head] - θ[lines[i].tail]) - (1/lines[i].ratio)*lines[i].γ * v[lines[i].head]*v[lines[i].tail] *sin(θ[lines[i].head] - θ[lines[i].tail]))
+        con = @NLconstraint(m, qij[i] == -(1/lines[i].ratio)^2*(lines[i].β + lines[i].b_charge/2)* v[lines[i].head]^2 + (1/lines[i].ratio)*lines[i].β * v[lines[i].head]*v[lines[i].tail] *cos(θ[lines[i].head] - θ[lines[i].tail]) - (1/lines[i].ratio)*lines[i].γ * v[lines[i].head]*v[lines[i].tail] *sin(θ[lines[i].head] - θ[lines[i].tail]))
         push!(qij_constr, con)
 
         # flow leaving j towards i
-        @NLconstraint(m, con, pji[i] ==  lines[i].γ * v[lines[i].tail]^2 - (1/lines[i].ratio) * lines[i].γ * v[lines[i].head]*v[lines[i].tail] *cos(θ[lines[i].head] - θ[lines[i].tail]) + (1/lines[i].ratio) * lines[i].β * v[lines[i].head]*v[lines[i].tail] *sin(θ[lines[i].head] - θ[lines[i].tail]))
+        con = @NLconstraint(m, pji[i] ==  lines[i].γ * v[lines[i].tail]^2 - (1/lines[i].ratio) * lines[i].γ * v[lines[i].head]*v[lines[i].tail] *cos(θ[lines[i].head] - θ[lines[i].tail]) + (1/lines[i].ratio) * lines[i].β * v[lines[i].head]*v[lines[i].tail] *sin(θ[lines[i].head] - θ[lines[i].tail]))
         push!(pji_constr, con)
 
-        @NLconstraint(m, con, qji[i] == -(lines[i].β + lines[i].b_charge/2) * v[lines[i].tail]^2 +(1/lines[i].ratio) * lines[i].β * v[lines[i].head]*v[lines[i].tail] *cos(θ[lines[i].head] - θ[lines[i].tail]) + (1/lines[i].ratio) * lines[i].γ * v[lines[i].head]*v[lines[i].tail] * sin(θ[lines[i].head] - θ[lines[i].tail]))
+        con = @NLconstraint(m, qji[i] == -(lines[i].β + lines[i].b_charge/2) * v[lines[i].tail]^2 +(1/lines[i].ratio) * lines[i].β * v[lines[i].head]*v[lines[i].tail] *cos(θ[lines[i].head] - θ[lines[i].tail]) + (1/lines[i].ratio) * lines[i].γ * v[lines[i].head]*v[lines[i].tail] * sin(θ[lines[i].head] - θ[lines[i].tail]))
         push!(qji_constr, con)
 
         # Line limits
@@ -111,6 +111,16 @@ function createandsolvemodel(thermalLimitscale, generators, buses, lines, farms,
     println("Time taken (seconds): ", toq())
     println("Phase angle bound (deg-ree): ", rad2deg(θᵘ))
     println("*******************************************")
+
+    println("Deterministic solution: flow on line 105: ", getvalue(pij[105])^2 + getvalue(qij[105])^2, " Limit: ", lines[105].u^2)
+    println("Deterministic solution: flow on line 106: ", getvalue(pij[106])^2 + getvalue(qij[106])^2, " Limit: ", lines[106].u^2)
+    println("Deterministic solution: flow on line 107: ", getvalue(pij[107])^2 + getvalue(qij[107])^2, " Limit: ", lines[107].u^2)
+    println("Deterministic solution: flow on line 108: ", getvalue(pij[108])^2 + getvalue(qij[108])^2, " Limit: ", lines[108].u^2)
+    println("Deterministic solution: flow on line 116: ", getvalue(pij[116])^2 + getvalue(qij[116])^2, " Limit: ", lines[116].u^2)
+    println("Deterministic solution: flow on line 119: ", getvalue(pij[119])^2 + getvalue(qij[119])^2, " Limit: ", lines[119].u^2)
+
+
+
 
     # linearized map from (v,θ) to flows
     x = [v;θ]
@@ -169,8 +179,8 @@ function createandsolvemodel(thermalLimitscale, generators, buses, lines, farms,
         qgen[farms[k].bus] += getvalue(γ[k])*farms[k].μ
     end
 
-    @show maximum(pgen - (vθ_to_node_p_const + vθ_to_node_p_J*getvalue(x)))
-    @show maximum(qgen - (vθ_to_node_q_const + vθ_to_node_q_J*getvalue(x)))
+    # @show maximum(pgen - (vθ_to_node_p_const + vθ_to_node_p_J*getvalue(x)))
+    # @show maximum(qgen - (vθ_to_node_q_const + vθ_to_node_q_J*getvalue(x)))
 
     vθ_to_node_pq_J = [ vθ_to_node_p_J
                         vθ_to_node_q_J ]
@@ -204,10 +214,10 @@ function createandsolvemodel(thermalLimitscale, generators, buses, lines, farms,
     Ainv[abs(Ainv) .<= 1e-6] = 0.0
 
     Ainvsp = sparse(Ainv)
-    @show nnz(Ainvsp)
-    @show size(A,1)^2
+    # @show nnz(Ainvsp)
+    # @show size(A,1)^2
 
-    m_chance = ChanceModel(solver=IpoptSolver())
+    m_chance = ChanceModel(solver=GurobiSolver())
 
     ## Deterministic part of the model
 
@@ -250,8 +260,10 @@ function createandsolvemodel(thermalLimitscale, generators, buses, lines, farms,
     # deterministic line limits
     for i in 1:numlines
         if lines[i].u > 0
-            @constraint(m_chance, pij_chance[i]^2 + qij_chance[i]^2 <= lines[i].u^2)
-            @constraint(m_chance, pji_chance[i]^2 + qji_chance[i]^2 <= lines[i].u^2)
+            @constraint(m_chance, pij_chance[i]^2 + qij_chance[i]^2 <= (lines[i].u)^2)
+            @constraint(m_chance, pji_chance[i]^2 + qji_chance[i]^2 <= (lines[i].u)^2)
+            @constraint(m_chance, pij_chance[119]^2 + qij_chance[119]^2 <= (lines[119].u)^2)
+            @constraint(m_chance, pji_chance[119]^2 + qji_chance[119]^2 <= (lines[119].u)^2)
         end
     end
 
@@ -348,12 +360,25 @@ function createandsolvemodel(thermalLimitscale, generators, buses, lines, farms,
     @variable(m_chance, aux_qij[1:numlines] >= 0)
     @variable(m_chance, aux_qji[1:numlines] >= 0)
 
+
     @constraint(m_chance, chance_flow_limit1[i=1:numlines], -aux_pij[i] ≤ pij_chance[i] + Δpij[i] ≤ aux_pij[i], with_probability=1-ϵ, approx="1.25")
     @constraint(m_chance, chance_flow_limit2[i=1:numlines], -aux_pji[i] ≤ pji_chance[i] + Δpji[i] ≤ aux_pji[i], with_probability=1-ϵ, approx="1.25")
     @constraint(m_chance, chance_flow_limit3[i=1:numlines], -aux_qij[i] ≤ qij_chance[i] + Δqij[i] ≤ aux_qij[i], with_probability=1-ϵ, approx="1.25")
     @constraint(m_chance, chance_flow_limit4[i=1:numlines], -aux_qji[i] ≤ qji_chance[i] + Δqji[i] ≤ aux_qji[i], with_probability=1-ϵ, approx="1.25")
-    @constraint(m_chance, chance_flow_limit5[i=1:numlines], aux_pij[i]^2 + aux_qij[i]^2 ≤ lines[i].u^2)
-    @constraint(m_chance, chance_flow_limit6[i=1:numlines], aux_pji[i]^2 + aux_qji[i]^2 ≤ lines[i].u^2)
+
+    @constraint(m_chance, chance_flow_limit1[i=119], -aux_pij[i] ≤ pij_chance[i] + Δpij[i] ≤ aux_pij[i], with_probability=1-ϵ, approx="1.25")
+    @constraint(m_chance, chance_flow_limit2[i= 119], -aux_pji[i] ≤ pji_chance[i] + Δpji[i] ≤ aux_pji[i], with_probability=1-ϵ, approx="1.25")
+    @constraint(m_chance, chance_flow_limit3[i= 119], -aux_qij[i] ≤ qij_chance[i] + Δqij[i] ≤ aux_qij[i], with_probability=1-ϵ, approx="1.25")
+    @constraint(m_chance, chance_flow_limit4[i= 119], -aux_qji[i] ≤ qji_chance[i] + Δqji[i] ≤ aux_qji[i], with_probability=1-ϵ, approx="1.25")
+
+
+
+    @constraint(m_chance, chance_flow_limit5[i=1:numlines], aux_pij[i]^2 + aux_qij[i]^2 ≤ (lines[i].u)^2)
+    @constraint(m_chance, chance_flow_limit6[i=1:numlines], aux_pji[i]^2 + aux_qji[i]^2 ≤ (lines[i].u)^2)
+
+
+    @constraint(m_chance, chance_flow_limit5[i=119], aux_pij[i]^2 + aux_qij[i]^2 ≤ (lines[i].u)^2)
+    @constraint(m_chance, chance_flow_limit6[i=119], aux_pji[i]^2 + aux_qji[i]^2 ≤ (lines[i].u)^2)
 
     status_cc = solve(m_chance, method = :Reformulate)
 
@@ -363,13 +388,16 @@ function createandsolvemodel(thermalLimitscale, generators, buses, lines, farms,
     println("*******************************************")
 
 
+    println("Opt CC solution for: ", ϵ, " Flow on line 119: ", getvalue(pij_chance[119])^2 + getvalue(qij_chance[119])^2)
+
+
     # Define outputs of the models that are needed for calculating response functions of generators
 
     gp_cc   = getvalue(gp_chance)
     gq_cc   = getvalue(gq_chance)
     α_cc    = getvalue(α_chance)
-    gp_det  = getvalue(gp)
-    gq_det  = getvalue(gq)
 
-    return status_det, getobjectivevalue(m), status_cc, getobjectivevalue(m_chance), getvalue(gp_chance), getvalue(gq_chance), getvalue(α_chance), getvalue(γ_chance), getvalue(r_chance), getvalue(gp), getvalue(r), getvalue(γ), total_deviation, gp_initial, gq_initial, v_initial, θ_initial,     time_det
+
+    return status_det, getobjectivevalue(m), status_cc, getobjectivevalue(m_chance), getvalue(v_chance), getvalue(gp_chance), getvalue(gq_chance), getvalue(α_chance), getvalue(γ_chance), getvalue(r_chance),  getvalue(r), getvalue(γ), total_deviation,
+    gp_initial, gq_initial, v_initial, θ_initial, time_det
 end
